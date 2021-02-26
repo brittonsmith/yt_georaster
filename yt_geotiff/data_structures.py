@@ -184,6 +184,11 @@ class GeoTiffHierarchy(YTGridHierarchy):
     def _count_grids(self):
         self.num_grids = 1
 
+class JPEG2000Hierarchy(GeoTiffHierarchy):
+    def _detect_output_fields(self):
+        # check data dir of the given jp2 file and grab all similarly named files.
+        # Follow example for GeoTiffHierarchy to populate the field list.
+        raise NotImplementedError
 
 class GeoTiffDataset(Dataset):
     """Dataset for saved covering grids, arbitrary grids, and FRBs."""
@@ -191,6 +196,7 @@ class GeoTiffDataset(Dataset):
     _field_info_class = GeoTiffFieldInfo
     _dataset_type = 'geotiff'
     _valid_extensions = ('.tif', '.tiff')
+    _driver_type = "GTIFF"
     geometry = "cartesian"
     default_fluid_type = "bands"
     fluid_types = ("bands", "index", "sentinel2")
@@ -483,10 +489,14 @@ class GeoTiffDataset(Dataset):
 
         with rasterio.open(fn, "r") as f:
             driver_type = f.meta["driver"]
-            if driver_type == "GTiff":
+            if driver_type == self._driver_type:
                 return True
         return False
 
+class JPEG2000Dataset(GeoTiffDataset):
+    _index_class = JPEG2000Hierarchy
+    _valid_extensions = ('.jp2',)
+    _driver_type = "JP2000" # FIXME with real driver name
 
 class GeoTiffWindowDataset(GeoTiffDataset):
     """
